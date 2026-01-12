@@ -257,13 +257,13 @@ elif args[0] == "lists":
 
 elif args[0] == "help":
     print("""
-1. listman help - show this
-2. listman add - add new list
-3. listman list listname - show the specified list
-4. listman reset - delete all lists and list settings
-5. listman remove listname - remove the specified list
-6. listman update listname/all - 'all' will update all lists after executing listman change, or a list can be specified
-7. listman change - change lists settings: style, border, borderwidth, prefix
-8. listman lists - show all lists and list settings
-9. listman append listname newlistitem - add a new item to a list (separate different items using ',,')
+1.  listman help - show this
+2.  listman add - add new list
+3.  listman list list_name - show the specified list
+4.  listman reset - delete all lists and list settings
+5.  listman remove list_name - remove the specified list
+6.  listman update list_name/all - 'all' will update all lists after executing listman change, or a list can be specified
+7.  listman change - change lists settings: style, border, borderwidth, prefix
+8.  listman lists - show all lists and list settings
+9.  listman append list_name new_list_item - add a new item to a list (separate different items using ',,')
 """)
