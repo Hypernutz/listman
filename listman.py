@@ -92,6 +92,9 @@ def append(clist, textlist, editabsolute=True):
 # add list -----------------------------------------------------------------------------------------------------------------------------------
 if args[0] == "add":
     listname = input("Enter list name: ")
+    if " " in listname:
+        print("NOTE: the spaces in your listname will be replaced by '_'. Please use _ in place of the spaces whenever refering to the list in other commands.")
+        listname.replace(' ', "_")
     try:
         open(f"{listdir}/absolute/{listname}.txt", "x")
         open(f"{listdir}/{listname}.txt", "x")
@@ -257,13 +260,18 @@ elif args[0] == "lists":
 
 elif args[0] == "help":
     print("""
-1.  listman help - show this
-2.  listman add - add new list
-3.  listman list list_name - show the specified list
-4.  listman reset - delete all lists and list settings
-5.  listman remove list_name - remove the specified list
-6.  listman update list_name/all - 'all' will update all lists after executing listman change, or a list can be specified
-7.  listman change - change lists settings: style, border, borderwidth, prefix
-8.  listman lists - show all lists and list settings
-9.  listman append list_name new_list_item - add a new item to a list (separate different items using ',,')
+listman help - show this
+listman add - add new list
+listman list list_name - show the specified list
+listman reset - delete all lists and list settings
+listman clear listname(s) - clear the specified lists
+listman remove list_name(s) - remove the specified list
+listman rm list_name exactlistitem - remove the specified item from specified list
+listman update list_name(s)/all - 'all' will update all lists after executing listman change, or a list can be specified
+listman change - change lists settings: style, border, borderwidth, prefix
+listman lists - show all lists and list settings
+listman append list_name new_list_item(s) - add a new item(s) to a list(s)
+listman settings - adjust listman settings like autobackup, etc.
+listman export list_name export_path - export a list
+listman exportprog list_name export_path - export a list for use in programs of languages like python, java, c++ 
 """)
