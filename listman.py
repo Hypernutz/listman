@@ -10,10 +10,15 @@ def rm(path):
     os.system(f"rm '{path}'")
 def touch(path):
     os.system(f"touch '{path}'")
+def copy(path, dest_path):
+    os.system(f"cp -r '{path}' '{dest_path}'")
+def mkdir(path):
+    os.system(f"mkdir -p '{path}'")
 username = getpass.getuser()
 listdir = f"/home/{username}/.listman"
 base = Path.home() / ".listman"
 (base / "absolute").mkdir(parents=True, exist_ok=True)
+(base / "prefixes").mkdir(parents=True, exist_ok=True)
 (base / "listlist.txt").touch(exist_ok=True)
 
 args = sys.argv[1:len(sys.argv)]
@@ -28,15 +33,16 @@ with open(f"{listdir}/listlist.txt", "r+") as f:
     except:
         f.write("{}")
     f.close()
-def append(clist, textlist, editabsolute=True):
-    date = datetime.datetime.now().date()
-    time = datetime.datetime.now().time()
-    day = datetime.datetime.now().day
-    month = datetime.datetime.now().month
-    year = datetime.datetime.now().year
-    hour = datetime.datetime.now().hour
-    minute = datetime.datetime.now().minute
-    second = datetime.datetime.now().second
+def append(clist, textlist, editabsolute=True, newlist=newlist, prefixfromfile=False):
+    now = datetime.datetime.now()
+    date = now.date()
+    time = now.time()
+    day = now.day
+    month = now.month
+    year = now.year
+    hour = now.hour
+    minute = now.minute
+    second = now.second
     text = textlist
     toappend = ""
     style = newlist[clist]['liststyle']
@@ -46,11 +52,11 @@ def append(clist, textlist, editabsolute=True):
     prefix = newlist[clist]['prefix']
     left = (stylechar*stylewidth)
     space = (' '*(stylewidth-1))
-    prefixspace = ' '*len(prefix['prefix'])
     leftp = ""
     rightp = ""
     topp = ""
     bottomp = ""
+    y = 0
     match prefix['position']:
         case 'left':
             leftp = eval(prefix['prefix'])
@@ -60,11 +66,30 @@ def append(clist, textlist, editabsolute=True):
             topp = eval(prefix['prefix'])
         case 'below':
             bottomp = eval(prefix['prefix'])
-    toappend+=topp+"\n"
     for i in text:
+        if prefixfromfile:
+            with open(f"{listdir}/prefixes/{clist}.txt", "r") as f:
+                x = f.read()
+            if y > len(x.split(";:;"))-1:
+                exit()
+            match prefix['position']:
+                case 'left':
+                    leftp = x.split(";:;")[y]
+                case 'right':
+                    rightp = x.split(";:;")[y]
+                case 'above':
+                    topp = x.split(";:;")[y]
+                case 'below':
+                    bottomp = x.split(";:;")[y]
+            y+=1
+        else:
+            with open(f"{listdir}/prefixes/{clist}.txt", "a") as f:
+                f.write(eval(prefix['prefix'])+";:;")
+                f.close()
         if i == "":
             continue
         i = i.strip()
+        toappend+=topp+"\n"
         if style == "1":
             for k in range(0, 3):
                 if k == 1:
@@ -72,16 +97,15 @@ def append(clist, textlist, editabsolute=True):
                     dstring = dstring[len(left+space*2+i):len(dstring)]
                     toappend += f"{' '*len(leftp)}{left+space+(' '*len(i))+space+dstring}{' '*len(rightp)}\n"
                     toappend += f"{leftp}{left+space+i+space+dstring}{rightp}\n"
-                    toappend += f"{' '*len(leftp)}{left+space+(' '*len(i))+space+dstring}{' '*len(rightp)}\n"     
+                    toappend += f"{' '*len(leftp)}{left+space+(' '*len(i))+space+dstring}{' '*len(rightp)}\n"
                 for f in range(0, stylewidth):
                     if k == 0 or k == 2:
                         toappend += ' '*len(leftp)+(stylechar*(stylewidth*2+(stylewidth-1)*2+len(i)))[0:len(stylechar)*stylewidth*2 + len(i) + (stylewidth-1)*2]+"\n"
-            toappend+=bottomp+"\n"
-            toappend += "\n\n"
-
 
         elif style == "2":
-            toappend += f"{i}\n"
+            toappend += f"{leftp}{i}{rightp}\n"
+        toappend+=bottomp+"\n"
+        toappend += "\n\n"
         if editabsolute:
             with open(f"{listdir}/absolute/{clist}.txt", "a") as f:
                 f.write(i+";")
@@ -168,7 +192,6 @@ elif args[0] == "append":
     clist = str(args[1])
     textlist = args[2:len(args)]
     text = ""
-    toappend = ""
     for df in textlist:
         text += df+" "
     text = text.split(",,")
@@ -181,8 +204,20 @@ elif args[0] == "remove":
         f.write(str(newlist))
     rm(f"{listdir}/{clist}.txt")
     rm(f"{listdir}/absolute/{clist}.txt")
-elif args[0] == "update":
 
+
+
+elif args[0] == "update":
+    try:
+        preserve1 = args[2] == "-pp"
+    except:
+        preserve1 = False
+    if not preserve1:
+        print("WARNING: updating lists will reset specific prefixes (prefixes which contain specific date or time)\nUse listman update list_name -pp to keep prefixes unchanged")
+        cont = input("Continue? (y/n): ")
+        if cont != "y":
+            print("cancelled")
+            exit()
     if args[1] == "all":
         for clist in newlist:
             textlist = []
@@ -190,19 +225,20 @@ elif args[0] == "update":
                 textlist = f.read().split(";")
                 f.close()
             rm(f"{listdir}/{clist}.txt")
-            rm(f"{listdir}/absolute/{clist}.txt")
             touch(f"{listdir}/{clist}.txt")
-            touch(f"{listdir}/absolute/{clist}.txt")
-            append(clist=clist, textlist=textlist)
+            append(clist=clist, textlist=textlist, editabsolute=False, prefixfromfile=preserve1)
     else:
         clist = str(args[1])
-        textlist = []
+        textlist2 = []
         with open(f"{listdir}/absolute/{clist}.txt", "r") as f:
-            textlist = f.read().split(";")
+            textlist2 = f.read().split(";")
             f.close()
         rm(f"{listdir}/{clist}.txt")
         touch(f"{listdir}/{clist}.txt")
-        append(clist=clist, textlist=textlist, editabsolute=False)
+        append(clist=clist, textlist=textlist2, editabsolute=False, prefixfromfile=preserve1)
+        
+
+        
 elif args[0] == "change":
     def setstyle():
         listname = input("Enter listname: ")
@@ -225,7 +261,7 @@ elif args[0] == "change":
         prefix = input("Enter prefix: ")
         prefixpos = input("Enter prefix position (left, right, above, below): ")
         test = False
-        for i in ['left', 'right', 'above', 'below']:
+        for i in ['left', 'right', 'above', 'below', '']:
             if i in prefixpos:
                 test = True
         if test:
@@ -257,21 +293,76 @@ elif args[0] == "lists":
     for key in newlist:
         st += (f"     {str(key)}{' '*(9-len(key))}{newlist[key]['liststyle']}{' '*9}{newlist[key]['borderchar']}{' '*(15-len(newlist[key]['borderchar']))}{newlist[key]['borderwidth']}{' '*(16-len(newlist[key]['borderwidth']))}{newlist[key]['prefix']}\n")
     print(st+"\n")
-
+elif args[0] == "export":
+    mkdir(args[2]+"/absolute")
+    mkdir(args[2]+"/prefixes")
+    if args[1] == "all":
+        for key in newlist:
+            copy(path=f"{listdir}/{key}.txt", dest_path=args[2])
+            copy(path=f"{listdir}/absolute/{key}.txt", dest_path=args[2]+"/absolute")
+            copy(path=f"{listdir}/prefixes/{key}.txt", dest_path=args[2]+"/prefixes")
+    else:
+        mkdir(args[2]+"/absolute")
+        mkdir(args[2]+"/prefixes")
+        copy(path=f"{listdir}/{args[1]}.txt", dest_path=args[2])
+        copy(path=f"{listdir}/absolute/{args[1]}.txt", dest_path=args[2]+"/absolute")
+        copy(path=f"{listdir}/prefixes/{args[1]}.txt", dest_path=args[2]+"/prefixes")
 elif args[0] == "help":
-    print("""
-listman help - show this
-listman add - add new list
-listman list list_name - show the specified list
-listman reset - delete all lists and list settings
-listman clear listname(s) - clear the specified lists
-listman remove list_name(s) - remove the specified list
-listman rm list_name exactlistitem - remove the specified item from specified list
-listman update list_name(s)/all - 'all' will update all lists after executing listman change, or a list can be specified
-listman change - change lists settings: style, border, borderwidth, prefix
-listman lists - show all lists and list settings
-listman append list_name new_list_item(s) - add a new item(s) to a list(s)
-listman settings - adjust listman settings like autobackup, etc.
-listman export list_name export_path - export a list
-listman exportprog list_name export_path - export a list for use in programs of languages like python, java, c++ 
-""")
+# GENERAL
+    cmd_general = [
+        "listman help ->",
+        "listman add ->",
+        "listman update list_name(s)/all ->",
+    ]
+    desc_general = [
+        "show this",
+        "add new list",
+        "'all' will update all lists after executing listman change, or a list can be specified",
+    ]
+    # OUTPUT / PRESENT
+    cmd_output_present = [
+        "listman list list_name ->",
+        "listman lists ->",
+        "listman export list_name/all export_path ->",
+        "listman exportprog list_name export_path ->",
+    ]
+    desc_output_present = [
+        "show the specified list",
+        "show all lists and list settings",
+        "export a list",
+        "export a list for use in programs of languages like python, java, c++",
+    ]
+    # INPUT / MODIFY
+    cmd_input_modify = [
+        "listman settings ->",
+        "listman change ->",
+        "listman append list_name new_list_item(s) ->",
+        "listman rename old_list_name new_list_name ->",
+        "listman edit list_name list_item_index(starting with 0) ->",
+    ]
+    desc_input_modify = [
+        "adjust listman settings like autobackup, etc.",
+        "change lists settings: style, border, borderwidth, prefix",
+        "add a new item(s) to a list(s)",
+        "rename a list",
+        "edit a list item",
+    ]
+    # REMOVAL
+    cmd_removal = [
+        "listman rm list_name exactlistitem ->",
+        "listman clear listname(s) ->",
+        "listman remove list_name(s) ->",
+        "listman reset ->",
+    ]
+    desc_removal = [
+        "remove the specified item from specified list",
+        "clear the specified lists",
+        "remove the specified list",
+        "delete all lists and list settings",
+    ]
+    CATEGORIES = ['GENERAL', 'OUTPUT/PRESENT', 'INPUT/MODIFY', 'REMOVAL']
+    for c in CATEGORIES:
+        k = c.lower().replace("/", "_")
+        print(f"\n\n{c}\n\n")
+        for i in range(0, len(eval(f"cmd_{k}"))):
+            print(eval(f"cmd_{k}[i]") + (' '*(70-len(eval(f"cmd_{k}[i]")))) + eval(f"desc_{k}[i]")+"\n")
