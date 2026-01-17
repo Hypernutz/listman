@@ -244,16 +244,14 @@ elif args[0] == "change":
         listname = input("Enter listname: ")
         style = input("Enter list style (1 for bordered, 2 for plain): ")
         newlist[listname]['liststyle'] = style
-    def setchar():
+    def setborder():
         listname = input("Enter listname: ")
         char = input("Enter border character: ")
-        newlist[listname]['borderchar'] = char
-    def setwidth():
-        listname = input("Enter listname: ")
         widthinchar = input("Enter borderwidth (number of characters thick): ")
         try:
             test = int(widthinchar)
             newlist[listname]['borderwidth'] = widthinchar
+            newlist[listname]['borderchar'] = char
         except:
             print("Error: type properly bich")
     def setprefix():
@@ -307,6 +305,26 @@ elif args[0] == "export":
         copy(path=f"{listdir}/{args[1]}.txt", dest_path=args[2])
         copy(path=f"{listdir}/absolute/{args[1]}.txt", dest_path=args[2]+"/absolute")
         copy(path=f"{listdir}/prefixes/{args[1]}.txt", dest_path=args[2]+"/prefixes")
+elif args[0] == "rm":
+    clist = str(args[1])
+    textlist = args[2:len(args)]
+    text = ""
+    for i in textlist:
+        text+=i+" "
+    print("Text:"+text)
+    with open(f"{listdir}/absolute/{clist}.txt", "r+") as f:
+        ablist = f.read().split(";")
+        print(ablist)
+        ablist.remove(text.strip())
+        text = ""
+        for k in ablist:
+            text+=k+";"
+        f.write(text)
+        with open(f"{listdir}/{clist}.txt", "w") as df:
+            df.write("")
+            df.close()
+        append(clist=clist, textlist=ablist, editabsolute=False, prefixfromfile=True)
+    f.close()
 elif args[0] == "help":
 # GENERAL
     cmd_general = [
